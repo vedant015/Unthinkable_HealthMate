@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Healthmate</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" />
+    <link rel="stylesheet" href="static/style.css" />
+  </head>
+
+  <body>
+    <div class="layout">
+      <!-- 🧠 Sidebar for Previous Chats -->
+      <div class="sidebar">
+        <h2>Previous Chats</h2>
+        <ul id="chat-list"></ul>
+        <button id="new-chat" aria-label="Start a new chat">+ New Chat</button>
+      </div>
+
+      <!-- 💬 Main Chat Container -->
+      <div class="container">
+        <h1>Healthmate</h1>
+        <div id="chat" class="chat">
+          <div class="msg assistant welcome">Hi! I'm here to help with your symptoms. Please describe them in detail below.</div>
+        </div>
+
+        <textarea id="msg" placeholder="Type your symptoms here..." rows="4" aria-describedby="msg-instructions" resize="vertical"></textarea>
+        <p id="msg-instructions" style="font-size: 0.8em; color: #666;">Press Enter or click Send to submit.</p>
+        <div class="controls">
+          <button id="send">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function() {
+        const chatEl = document.getElementById('chat');
+        const msgEl = document.getElementById('msg');
+        const sendBtn = document.getElementById('send');
+        const chatList = document.getElementById('chat-list');
+        const newChatBtn = document.getElementById('new-chat');
+        
+        let currentSessionId = null;  // Internal variable to handle session ID
+
+        function append(role, text) {
+          const p = document.createElement('div');
+          p.className = 'msg ' + role;
+          if (role === 'assistant') {
+            p.innerHTML = text.replace(/\n/g, '<br>').replace(/- /g, '<li>');  // Simple formatting
+          } else {
+            p.textContent = text;
+          }
+          chatEl.appendChild(p);
+          chatEl.scrollTop = chatEl.scrollHeight;
+          p.classList.add('fade-in');
+        }
+
+        async function loadSessions() {
+          try {
+            const res = await fetch('/api/sessions');
+            if (!res.ok) throw new Error('Failed to load sessions');
+            const sessions = await res.json();
+            chatList.innerHTML = '';
+            sessions.forEach(s => {
+              const li = document.createElement('li');
+              li.textContent = s.name || 'Untitled Chat';
+              li.dataset.session = s.session_id;
+              li.onclick = () => loadConversation(s.session_id, li);
+              chatList.appendChild(li);
+            });
+          } catch (error) {
+            console.error('Error loading sessions:', error);
+            append('assistant', 'Error: Could not load previous chats. Please try again.');
+          }
+        }
+
+        async function loadConversation(session_id, li) {
+  try {
+    // Highlight active chat
+    document.querySelectorAll('#chat-list li').forEach(el => el.classList.remove('active'));
+    li.classList.add('active');
+
+    chatEl.innerHTML = ''; // Clear current chat
+
+    const res = await fetch(`/api/messages/${session_id}`);
+    if (!res.ok) throw new Error('Failed to load conversation');
+    const messages = await res.json();
+
+    messages.forEach(m => {
+      if (m.role === 'assistant') {
+        // Try parsing assistant content as JSON
+        try {
+          const obj = JSON.parse(m.content);
+          if (obj.mode === 'answer') {
+            let output = '';
+            if (obj.conditions && obj.conditions.length) {
+              output += 'Possible conditions:\n';
+              obj.conditions.forEach(c => {
+                output += `${c.name} (${c.confidence}) — ${c.reason}\n`;
+              });
+            }
+            if (obj.next_steps && obj.next_steps.length) {
+              output += 'Recommended next steps:\n';
+              obj.next_steps.forEach(s => output += `${s}\n`);
+            }
+            output += 'Disclaimer: ' + (obj.disclaimer || '');
+            append('assistant', output);
+            return;
+          } else if (obj.mode === 'ask') {
+            append('assistant', obj.question);
+            return;
+          }
+        } catch (e) {
+          // Not JSON, display raw text
+        }
+      }
+      // Fallback: display message as-is
+      append(m.role, m.content);
+    });
+
+    currentSessionId = session_id; // Keep track of current session
+  } catch (error) {
+    console.error('Error loading conversation:', error);
+    append('assistant', 'Error: Could not load this conversation. Please start a new one.');
+  }
+}
+
+
+        newChatBtn.onclick = () => {
+          chatEl.innerHTML = '';
+          append('assistant', "Hi! I'm here to help with your symptoms. Describe them below.");
+          currentSessionId = null;  // Reset session ID for new chat
+        };
+
+        sendBtn.onclick = async () => {
+          const message = msgEl.value.trim();
+          if (!message) return;
+          append('user', message);
+          msgEl.value = '';
+          sendBtn.textContent = 'Sending... ⏳';
+          sendBtn.disabled = true;
+
+          try {
+            const res = await fetch('/api/chat', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ session_id: currentSessionId || null, message })  // Use internal session ID
+            });
+            if (!res.ok) throw new Error('API request failed');
+            const data = await res.json();
+            if (data.error) {
+              append('assistant', 'Error: ' + (data.error || JSON.stringify(data)));
+              return;
+            }
+            if (data.mode === 'ask') {
+              append('assistant', data.question);
+              if (data.session_id) currentSessionId = data.session_id;  // Update if new session ID is returned
+            } else if (data.mode === 'answer') {
+              const result = data.result;
+              let output = '<ul><li>Possible conditions:</li></ul><ul>';
+              result.conditions.forEach(c => output += `<li>${c.name} (${c.confidence}) — ${c.reason}</li>`);
+              output += '</ul><ul><li>Recommended next steps:</li></ul><ul>';
+              result.next_steps.forEach(s => output += `<li>${s}</li>`);
+              output += '</ul><p>Disclaimer: ' + result.disclaimer + '</p>';
+              append('assistant', output);
+              if (data.session_id) currentSessionId = data.session_id;  // Update if new session ID is returned
+            } else {
+              append('assistant', 'Unexpected response: ' + JSON.stringify(data));
+            }
+            await loadSessions();  // Refresh sidebar
+          } catch (error) {
+            console.error('Error sending message:', error);
+            append('assistant', 'Error: There was an issue sending your message. Please try again.');
+          } finally {
+            sendBtn.textContent = 'Send';
+            sendBtn.disabled = false;
+          }
+        };
+
+        loadSessions();
+      })();
+    </script>
+  </body>
+</html>

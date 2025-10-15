@@ -1,0 +1,206 @@
+/* 🧭 Layout for sidebar + main chat */
+.layout {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  max-width: 1100px;  /* Overall fixed max-width for the app */
+  margin: 0 auto;
+  padding: 16px;
+  box-sizing: border-box;
+  height: 100vh;
+}
+
+@media (max-width: 768px) {
+  .layout {
+    flex-direction: column;
+    height: auto;
+  }
+  .sidebar {
+    width: 100%;
+    min-width: 250px;
+    height: auto;
+  }
+  .container {
+    width: 100%;
+    max-width: 100%;  /* Full width on mobile, but capped */
+    height: 100vh;
+  }
+}
+
+/* 📋 Sidebar */
+.sidebar {
+  width: 250px;
+  min-width: 250px;
+  max-width: 250px;
+  height: 80vh;
+  max-height: 80vh;
+  background: #f1f5f9;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.sidebar h2 {
+  font-size: 18px;
+  margin-bottom: 12px;
+  color: #007bff;
+}
+
+#chat-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex-grow: 1;
+  overflow-y: auto;
+  max-height: 70vh;
+}
+
+#chat-list li {
+  padding: 10px;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: background 0.3s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  height: 40px;
+  line-height: 20px;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+#chat-list li:hover {
+  background: #dbeafe;
+}
+
+#chat-list li.active {
+  background: #007bff;
+  color: white;
+  font-weight: 500;
+}
+
+#new-chat {
+  background: #4caf50;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
+  width: 100%;
+}
+
+#new-chat:hover {
+  background: #43a047;
+}
+
+/* 💬 Main Chat Container */
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  flex: 1;  /* Allow it to grow within layout */
+  max-width: 800px;  /* Fixed max-width for the chat box to prevent expansion */
+  width: 100%;  /* Fill available space up to max-width */
+  box-sizing: border-box;
+}
+
+.chat {
+  margin-bottom: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+  background: #fff;
+  flex-grow: 1;
+  overflow-y: auto;
+  overflow-x: hidden;  /* Prevent horizontal scrolling */
+  max-height: calc(100% - 100px);  /* Ensure it fits within container */
+  word-wrap: break-word;  /* Handle long words in chat content */
+}
+
+.msg {
+  margin-bottom: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  word-break: break-word;  /* New: Ensure long text wraps without changing shape */
+  overflow-wrap: break-word;  /* Fallback for older browsers */
+}
+
+.msg.assistant {
+  background-color: #e0f7fa;
+  color: #00695f;
+  text-align: left;
+}
+
+.msg.user {
+  background-color: #c8e6c9;
+  color: #1b5e20;
+  text-align: right;
+}
+
+.msg.welcome {
+  font-style: italic;
+  color: #555;
+}
+
+/* Fade-in animation */
+.fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Controls and other elements */
+#msg-instructions {
+  font-size: 0.8em;
+  color: #666;
+  margin: 5px 0;
+}
+
+.controls {
+  margin-top: auto;
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 0;
+  background: #f9f9f9;
+  border-top: 1px solid #e0e0e0;
+}
+
+#msg {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-family: 'Roboto', sans-serif;
+  resize: vertical;
+  margin-bottom: 10px;
+  word-break: break-word;  /* Ensure long input text wraps */
+}
+
+#send {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+#send:hover {
+  background: #0056b3;
+}
