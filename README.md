@@ -5,6 +5,8 @@
 A web-based chat application that helps users understand their health symptoms.  
 **Note:** This tool is for educational purposes only and does not provide medical advice.
 
+## Demo link : https://drive.google.com/file/d/18You1Ak0alD5OLyKKKzoNGj0McYcbQi-/view?usp=sharing
+## Also the video is in the repo named : unthinkable.mp4
 ## Features
 - Chat with an AI assistant about your symptoms.
 - Get possible conditions and recommended next steps.
