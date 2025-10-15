@@ -27,4 +27,5 @@ A web-based chat application that helps users understand their health symptoms.
 4. Messages and sessions are stored in SQLite for future reference.
 
 ## Safety Measures
-- Does
+- Does **not** give prescriptions or dosages.
+- Provides guidance for educational purposes only.
